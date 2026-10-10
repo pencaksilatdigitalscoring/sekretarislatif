@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sekretaris - Digital Scoring Pencak Silat TGR</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Compatibility Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #00d2ff;
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --info: #8e44ad;
+            --dark: #2d3436;
+            --shadow: 0 10px 20px rgba(0,0,0,0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Header Styling */
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 15px;
+            color: white;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        header h1 { font-size: 1.2rem; font-weight: 700; text-transform: uppercase; }
+        header p { font-size: 0.7rem; opacity: 0.9; }
+
+        .lang-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 5px;
+        }
+        .lang-switch button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .lang-switch button:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 10px 20px 10px;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        /* PANEL UMUM */
+        .panel { background: white; border-radius: 15px; padding: 15px; box-shadow: var(--shadow); }
+        .panel-title { margin-bottom: 15px; font-size: 1rem; color: var(--primary-color); border-left: 4px solid var(--primary-color); padding-left: 10px; }
+
+        .btn-ctl { padding: 10px 2px; border: none; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
+        .btn-finish { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        
+        /* STYLING SEKRETARIS */
+        .sek-top-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .match-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+        .match-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--bg-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .match-title { font-weight: 700; color: var(--primary-color); font-size: 1rem; margin-bottom: 5px; }
+        
+        .side-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .side-box {
+            padding: 12px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        /* Perubahan background sesuai warna sudut */
+        .side-merah { background-color: var(--danger); border: 2px solid #c0392b; }
+        .side-biru { background-color: var(--primary-color); border: 2px solid #0056b3; }
+        
+        .side-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: block;
+        }
+        /* Perubahan warna text label agar kontras dengan background */
+        .side-merah .side-label { color: #ffffff; }
+        .side-biru .side-label { color: #ffffff; }
+
+        .sek-form-group { margin-bottom: 10px; }
+        /* Perubahan label text agar lebih jelas atau diubah menjadi putih jika berada di background merah/biru */
+        .side-box .sek-form-group label { color: rgba(255,255,255,0.9); }
+        .match-header-row .sek-form-group label { display: block; font-size: 0.65rem; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
+        
+        .sek-form-group input, .sek-form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            background-color: #fff;
+            color: var(--dark);
+        }
+        .sek-form-group input:focus, .sek-form-group select:focus {
+            border-color: var(--dark);
+        }
+
+        /* Upload Photo Styling */
+        .upload-wrapper {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.15); /* Diubah agar lebih pas dengan bacground solid */
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .img-prev-sek {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+        .input-file-custom {
+            font-size: 0.6rem;
+            width: 100%;
+            color: #ffffff; /* Diubah agar teks file tetap terlihat jelas */
+        }
+
+        .pagination-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        .pg-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .pg-btn:hover { background: #0056b3; }
+        .pg-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .pg-info { font-size: 0.85rem; font-weight: 600; }
+
+        footer { padding: 10px; text-align: center; font-size: 0.6rem; color: var(--text-sub); margin-top: auto;}
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 768px) {
+            .side-container { grid-template-columns: 1fr; }
+            .sek-top-actions { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="lang-switch">
+            <button onclick="changeLanguage('id')">ID</button>
+            <button onclick="changeLanguage('en')">EN</button>
+        </div>
+        <h1 data-i18n="menu_sekretaris">Sekretaris</h1>
+        <p data-i18n="header_sub">Pencak Silat Digital System | Tunggal - Ganda - Regu</p>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <h2 class="panel-title" data-i18n="manajemen_sek">Manajemen Data Sekretaris Pertandingan</h2>
+            
+            <div class="sek-top-actions">
+                <button class="btn-ctl btn-finish" style="padding: 12px; font-size: 0.8rem;" onclick="saveSekData()">
+                    <i class="fas fa-save"></i> <span data-i18n="simpan_data_hal">SIMPAN DATA HALAMAN INI</span>
+                </button>
+                <button class="btn-ctl btn-danger" style="padding: 12px; font-size: 0.8rem;" onclick="deleteAllMatches()">
+                    <i class="fas fa-trash-alt"></i> <span data-i18n="hapus_semua_data">HAPUS SEMUA DATA PERTANDINGAN</span>
+                </button>
+            </div>
+
+            <div id="sekretaris-content">
+                <!-- Matches will be injected here via JS -->
+            </div>
+
+            <div class="pagination-bar">
+                <button class="pg-btn" id="prev-pg" onclick="changeSekPage(-1)" data-i18n="text_sebelumnya">Sebelumnya</button>
+                <span class="pg-info"><span data-i18n="text_halaman">Halaman</span> <span id="current-pg-num">1</span> <span data-i18n="text_dari">dari</span> 100</span>
+                <button class="pg-btn" id="next-pg" onclick="changeSekPage(1)" data-i18n="text_selanjutnya">Selanjutnya</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2023 - 2026 IPSI Digital Scoring System | Sekretaris Panel
+    </footer>
+
+    <script>
+        // TRANSLATION DICTIONARY
+        const translations = {
+            id: {
+                "menu_sekretaris": "Sekretaris Pertandingan",
+                "header_sub": "Pencak Silat Digital System | Tunggal - Ganda - Regu",
+                "manajemen_sek": "Manajemen Data Sekretaris Pertandingan",
+                "simpan_data_hal": "SIMPAN DATA HALAMAN INI",
+                "hapus_semua_data": "HAPUS SEMUA DATA PERTANDINGAN",
+                "partai": "PARTAI",
+                "fase": "Fase",
+                "text_kualifikasi_usia": "Kualifikasi Usia",
+                "kategori": "Kategori",
+                "text_gender": "Gender",
+                "sudut_merah": "Sudut Merah",
+                "sudut_biru": "Sudut Biru",
+                "text_nama_lengkap": "Nama Lengkap",
+                "text_asal_daerah": "Asal Daerah",
+                "text_halaman": "Halaman",
+                "text_dari": "dari",
+                "text_sebelumnya": "Sebelumnya",
+                "text_selanjutnya": "Selanjutnya",
+                "alert_simpan_cloud": "✅ Data Tersimpan di Cloud!",
+                "alert_del_all_sek": "PERINGATAN! Seluruh data sekretaris akan dihapus permanen. Lanjutkan?",
+                "alert_data_terhapus": "Seluruh data terhapus."
+            },
+            en: {
+                "menu_sekretaris": "Match Secretary",
+                "header_sub": "Pencak Silat Digital System | Solo - Duo - Team",
+                "manajemen_sek": "Secretary Data Management",
+                "simpan_data_hal": "SAVE PAGE DATA",
+                "hapus_semua_data": "DELETE ALL MATCH DATA",
+                "partai": "MATCH",
+                "fase": "Phase",
+                "text_kualifikasi_usia": "Age Qualification",
+                "kategori": "Category",
+                "text_gender": "Gender",
+                "sudut_merah": "Red Corner",
+                "sudut_biru": "Blue Corner",
+                "text_nama_lengkap": "Full Name",
+                "text_asal_daerah": "Region/Contingent",
+                "text_halaman": "Page",
+                "text_dari": "of",
+                "text_sebelumnya": "Previous",
+                "text_selanjutnya": "Next",
+                "alert_simpan_cloud": "✅ Data Saved to Cloud!",
+                "alert_del_all_sek": "WARNING! All secretary data will be permanently deleted. Continue?",
+                "alert_data_terhapus": "All data deleted."
+            }
+        };
+
+        let currentLang = localStorage.getItem('appLang') || 'id';
+
+        function t(key) {
+            if (translations[currentLang] && translations[currentLang][key]) {
+                return translations[currentLang][key];
+            }
+            return key;
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLang', lang);
+            
+            // Translate static elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerHTML = t(key);
+            });
+
+            // Re-render components containing dynamic language strings
+            renderSekretaris();
+        }
+
+        // FIREBASE INITIALIZATION
+        const firebaseConfig = {
+  apiKey: "AIzaSyBML8_WknVxi1LaCoIvRPQwQwWxkpYY7Mc",
+  authDomain: "tanding-latif.firebaseapp.com",
+  databaseURL: "https://tanding-latif-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "tanding-latif",
+  storageBucket: "tanding-latif.firebasestorage.app",
+  messagingSenderId: "1088072457964",
+  appId: "1:1088072457964:web:e23c40cf40409c83468fc9"
+};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let globalMatchData = [];
+        let currentSekPageNum = 1;
+
+        // INITIAL SYNC FROM FIREBASE
+        db.ref('matches').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                globalMatchData = Object.keys(data).map(key => ({ partai: key, ...data[key] }));
+            } else {
+                globalMatchData = [];
+            }
+            renderSekretaris();
+        });
+
+        // SEKRETARIS LOGIC
+        function handleSekPhoto(partai, side, input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result;
+                document.getElementById(`prev-sek-${partai}-${side}`).src = base64;
+                input.setAttribute('data-base64', base64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderSekretaris() {
+            const container = document.getElementById('sekretaris-content');
+            container.innerHTML = '';
+            
+            const startPartai = (currentSekPageNum - 1) * 10 + 1;
+            
+            for(let i = 0; i < 10; i++) {
+                const partaiNum = startPartai + i;
+                const match = globalMatchData.find(m => m.partai == partaiNum) || {};
+                
+                const matchHtml = `
+                    <div class="match-card" data-partai="${partaiNum}">
+                        <div class="match-header-row">
+                            <div class="match-title">${t('partai')} ${partaiNum}</div>
+                            
+                            <!-- Penambahan input Fase -->
+                            <div class="sek-form-group" style="margin-bottom:0; flex:1; min-width:110px;">
+                                <label>${t('fase')}</label>
+                                <select class="in-fase">
+                                    <option ${match.fase=='Penyisihan'?'selected':''}>Penyisihan</option>
+                                    <option ${match.fase=='Perempatfinal'?'selected':''}>Perempatfinal</option>
+                                    <option ${match.fase=='Semifinal'?'selected':''}>Semifinal</option>
+                                    <option ${match.fase=='Final'?'selected':''}>Final</option>
+                                </select>
+                            </div>
+
+                            <div class="sek-form-group" style="margin-bottom:0; flex:1; min-width:110px;">
+                                <label>${t('text_kualifikasi_usia')}</label>
+                                <select class="in-usia">
+                                    <option ${match.usia=='Usia Dini 1'?'selected':''}>Usia Dini 1</option>
+                                    <option ${match.usia=='Usia Dini 2'?'selected':''}>Usia Dini 2</option>
+                                    <option ${match.usia=='Pra Remaja'?'selected':''}>Pra Remaja</option>
+                                    <option ${match.usia=='Remaja'?'selected':''}>Remaja</option>
+                                    <option ${match.usia=='Dewasa'?'selected':''}>Dewasa</option>
+                                </select>
+                            </div>
+                            <div class="sek-form-group" style="margin-bottom:0; flex:1; min-width:110px;">
+                                <label>${t('kategori')}</label>
+                                <select class="in-kategori">
+                                    <option ${match.kategori=='Tunggal'?'selected':''}>Tunggal</option>
+                                    <option ${match.kategori=='Ganda'?'selected':''}>Ganda</option>
+                                    <option ${match.kategori=='Regu'?'selected':''}>Regu</option>
+                                    <!-- Tunggal Bebas diubah menjadi Solo Kreatif -->
+                                    <option ${match.kategori=='Solo Kreatif'?'selected':''}>Solo Kreatif</option>
+                                </select>
+                            </div>
+                            <div class="sek-form-group" style="margin-bottom:0; flex:1; min-width:80px;">
+                                <label>${t('text_gender')}</label>
+                                <select class="in-gender">
+                                    <option ${match.gender=='Putra'?'selected':''}>Putra</option>
+                                    <option ${match.gender=='Putri'?'selected':''}>Putri</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="side-container">
+                            
+                            <!-- Sudut Biru dipindah ke posisi kiri -->
+                            <div class="side-box side-biru">
+                                <span class="side-label">${t('sudut_biru')}</span>
+                                <div class="sek-form-group">
+                                    <input type="text" class="in-nama-biru" placeholder="${t('text_nama_lengkap')}" value="${match.namaBiru || ''}">
+                                </div>
+                                <div class="sek-form-group">
+                                    <input type="text" class="in-kont-biru" placeholder="${t('text_asal_daerah')}" value="${match.kontBiru || ''}">
+                                </div>
+                                <div class="upload-wrapper">
+                                    <img class="img-prev-sek" id="prev-sek-${partaiNum}-biru" src="${match.imgBiru || 'https://iili.io/CShnhS2.png'}">
+                                    <input type="file" class="input-file-custom in-img-biru" accept=".jpg,.jpeg,.png,.pdf" data-base64="${match.imgBiru || ''}" onchange="handleSekPhoto(${partaiNum}, 'biru', this)">
+                                </div>
+                            </div>
+                            
+                            <!-- Sudut Merah dipindah ke posisi kanan -->
+                            <div class="side-box side-merah">
+                                <span class="side-label">${t('sudut_merah')}</span>
+                                <div class="sek-form-group">
+                                    <input type="text" class="in-nama-merah" placeholder="${t('text_nama_lengkap')}" value="${match.namaMerah || ''}">
+                                </div>
+                                <div class="sek-form-group">
+                                    <input type="text" class="in-kont-merah" placeholder="${t('text_asal_daerah')}" value="${match.kontMerah || ''}">
+                                </div>
+                                <div class="upload-wrapper">
+                                    <img class="img-prev-sek" id="prev-sek-${partaiNum}-merah" src="${match.imgMerah || 'https://iili.io/CShnhS2.png'}">
+                                    <input type="file" class="input-file-custom in-img-merah" accept=".jpg,.jpeg,.png,.pdf" data-base64="${match.imgMerah || ''}" onchange="handleSekPhoto(${partaiNum}, 'merah', this)">
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += matchHtml;
+            }
+            
+            document.getElementById('current-pg-num').innerText = currentSekPageNum;
+            document.getElementById('prev-pg').disabled = (currentSekPageNum === 1);
+            document.getElementById('next-pg').disabled = (currentSekPageNum === 100);
+        }
+
+        function changeSekPage(dir) {
+            currentSekPageNum += dir;
+            renderSekretaris();
+            window.scrollTo(0,0);
+        }
+
+        function saveSekData() {
+            const cards = document.querySelectorAll('.match-card');
+            const updates = {};
+            cards.forEach(card => {
+                const partai = card.getAttribute('data-partai');
+                const matchObj = { 
+                    partai: parseInt(partai),
+                    fase: card.querySelector('.in-fase').value,
+                    usia: card.querySelector('.in-usia').value,
+                    kategori: card.querySelector('.in-kategori').value,
+                    gender: card.querySelector('.in-gender').value,
+                    namaMerah: card.querySelector('.in-nama-merah').value,
+                    kontMerah: card.querySelector('.in-kont-merah').value,
+                    namaBiru: card.querySelector('.in-nama-biru').value,
+                    kontBiru: card.querySelector('.in-kont-biru').value,
+                    imgMerah: card.querySelector('.in-img-merah').getAttribute('data-base64') || '',
+                    imgBiru: card.querySelector('.in-img-biru').getAttribute('data-base64') || ''
+                };
+                
+                // Jangan timpa status jika sudah ada, retain state-nya
+                const existingMatch = globalMatchData.find(m => m.partai == partai);
+                if (existingMatch) {
+                    matchObj.redStatus = existingMatch.redStatus || '';
+                    matchObj.blueStatus = existingMatch.blueStatus || '';
+                }
+
+                updates['/matches/' + partai] = matchObj;
+            });
+            
+            db.ref().update(updates).then(() => {
+                alert(t('alert_simpan_cloud'));
+            }).catch((err) => {
+                alert("Error saving data: " + err.message);
+            });
+        }
+
+        function deleteAllMatches() {
+            if(confirm(t('alert_del_all_sek'))) {
+                db.ref('matches').remove().then(() => {
+                    alert(t('alert_data_terhapus'));
+                }).catch((err) => {
+                    alert("Error deleting data: " + err.message);
+                });
+            }
+        }
+
+        // Jalankan inisialisasi awal
+        document.addEventListener("DOMContentLoaded", () => {
+            changeLanguage(currentLang);
+        });
+
+    </script>
+</body>
+</html>
